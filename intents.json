@@ -1,0 +1,19 @@
+{
+  "intents": [
+    {
+      "tag": "sapaan",
+      "patterns": ["Halo", "Hi admin", "Selamat pagi", "Tes", "Ping"],
+      "responses": ["Halo! Bot Hytale siap membantu.", "Hi, ada yang bisa dibantu?"]
+    },
+    {
+      "tag": "tanya_server",
+      "patterns": ["Ini server apa?", "Jelaskan tentang server ini", "Info server"],
+      "responses": ["Ini adalah server Hytale Indonesia. Kami fokus pada survival RPG."]
+    },
+    {
+      "tag": "cara_join",
+      "patterns": ["Gimana cara masuk?", "Cara join server", "IP address nya mana?", "Mau main dong"],
+      "responses": ["Untuk join, silakan masukkan IP: play.hytaleindo.com di menu multiplayer."]
+    }
+  ]
+}

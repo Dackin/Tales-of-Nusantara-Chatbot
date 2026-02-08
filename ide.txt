@@ -1,0 +1,7 @@
+jadi ini bisa di monetize
+
+bikin 2 tipe ai
+
+free = model ai lokal yang hanya menjawab pertanyaan server
+
+bayar = model ai bayar yang bisa dijadikan asisten saat bermain vanilla
