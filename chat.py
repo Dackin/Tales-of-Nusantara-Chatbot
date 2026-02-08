@@ -1,10 +1,19 @@
 import google.generativeai as genai
-import sys
-import os # Import untuk cek file
+import discord
+from dotenv import load_dotenv
+import os
+
+#load .env
+load_dotenv()
 
 # --- 1. KONFIGURASI ---
-API_KEY = "AIzaSyDh4fHIO2fbiYunYQV4kkO0dEx3xW1mpg4" 
-genai.configure(api_key=API_KEY)
+GEMINI_API_KEY = os.getenv("gemini_API")
+genai.configure(api_key=GEMINI_API_KEY)
+
+discord_token = os.getenv("discord_token")
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 
 # --- 2. FUNGSI MEMBACA WIKI (LOADER) ---
 def load_wiki_file(filename):
@@ -39,45 +48,51 @@ model = genai.GenerativeModel(
     model_name="gemini-2.5-flash",
     system_instruction=system_instruction
 )
+chat_sessions = {}
 
-chat_session = model.start_chat(history=[])
+# --- 4. EVENT: KETIKA BOT SIAP ---
+@client.event
+async def on_ready():
+    print(f'✅ Bot berhasil login sebagai {client.user}')
+    print('Siap melayani warga Nusantara!')
 
-# ... (Sisanya sama persis dengan kode sebelumnya)
+# --- 5. EVENT: KETIKA ADA PESAN MASUK ---
+@client.event
+async def on_message(message):
+    # PENTING: Jangan biarkan bot merespon dirinya sendiri (Looping)
+    if message.author == client.user:
+        return
 
-# --- 4. LOOP CHAT UTAMA ---
-def main():
-    print("==========================================")
-    print("🤖 NusantaraBot Siap Melayani 🤖")
-    print("Ketik 'quit' atau 'exit' untuk keluar.")
-    print("==========================================")
+    # Opsional: Bot hanya merespon jika di-mention atau di channel khusus
+    # Contoh: hanya merespon di channel bernama 'tanya-bot'
+    # if message.channel.name != "tanya-bot":
+    #    return
 
-    while True:
-        try:
-            # Input User
-            user_input = input("\nKamu: ")
+    # Ambil isi pesan user
+    user_input = message.content
+    channel_id = message.channel.id
+
+    # Cek apakah channel ini sudah punya sesi chat history?
+    if channel_id not in chat_sessions:
+        chat_sessions[channel_id] = model.start_chat(history=[])
+    
+    chat = chat_sessions[channel_id]
+
+    try:
+        # Tampilkan status "Bot is typing..." di Discord
+        async with message.channel.typing():
+            # Kirim ke Gemini
+            response = chat.send_message(user_input)
             
-            # Cek keluar
-            if user_input.lower() in ["quit", "exit", "keluar"]:
-                print("NusantaraBot: Bye bye! Jangan lupa tanya-tanya lagi ya!")
-                break
+            # Kirim balasan ke Discord
+            # (await adalah perintah menunggu untuk proses asynchronous)
+            await message.channel.send(response.text)
             
-            # Kosongkan input biar gak error
-            if not user_input.strip():
-                continue
+            print(f"[{message.author}] bertanya: {user_input}") # Log di terminal
 
-            # Kirim ke Gemini (Bot sedang mengetik...)
-            print("NusantaraBot (Thinking...): ", end="", flush=True)
-            
-            # Kirim pesan ke API
-            response = chat_session.send_message(user_input)
-            
-            # Hapus tulisan 'Thinking...' dan tampilkan jawaban
-            # (Teknik menghapus baris di terminal)
-            sys.stdout.write("\r" + " " * 30 + "\r") 
-            print(f"NusantaraBot: {response.text}")
+    except Exception as e:
+        print(f"Error: {e}")
+        await message.channel.send("Maaf, sirkuit otakku lagi konslet. Coba lagi nanti ya.")
 
-        except Exception as e:
-            print(f"\n[Error]: Koneksi terputus atau API bermasalah. ({e})")
-
-if __name__ == "__main__":
-    main()
+# --- 6. JALANKAN BOT ---
+client.run(discord_token)
