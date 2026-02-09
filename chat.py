@@ -7,13 +7,23 @@ import os
 load_dotenv()
 
 # --- 1. KONFIGURASI ---
-GEMINI_API_KEY = os.getenv("gemini_API")
-genai.configure(api_key=GEMINI_API_KEY)
+rpd = 0
+max_rpd = 20
+
+gemapi = 1
+max_gemapi = 10
 
 discord_token = os.getenv("discord_token")
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
+
+def cek_gemapi():
+    global gemapi
+    if gemapi == gemapi:
+        gemapi = 1
+    GEMINI_API_KEY = os.getenv("gemini_API" + str(gemapi))
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # --- 2. FUNGSI MEMBACA WIKI (LOADER) ---
 def load_wiki_file(filename):
@@ -59,18 +69,30 @@ async def on_ready():
 # --- 5. EVENT: KETIKA ADA PESAN MASUK ---
 @client.event
 async def on_message(message):
+
+    global rpd, gemapi
+
     # PENTING: Jangan biarkan bot merespon dirinya sendiri (Looping)
     if message.author == client.user:
         return
 
     # Opsional: Bot hanya merespon jika di-mention atau di channel khusus
-    # Contoh: hanya merespon di channel bernama 'tanya-bot'
-    # if message.channel.name != "tanya-bot":
-    #    return
+    if message.channel.name != "nusantara-bot":
+        return
 
     # Ambil isi pesan user
     user_input = message.content
     channel_id = message.channel.id
+
+    if rpd >= max_rpd:
+        if gemapi == max_gemapi:
+            gemapi = 1
+        else:
+            gemapi += 1
+            rpd = 0
+        
+        cek_gemapi()
+        print(f"[INFO] Berganti ke Gemini API Key #{gemapi}")
 
     # Cek apakah channel ini sudah punya sesi chat history?
     if channel_id not in chat_sessions:
@@ -85,8 +107,9 @@ async def on_message(message):
             response = chat.send_message(user_input)
             
             # Kirim balasan ke Discord
-            # (await adalah perintah menunggu untuk proses asynchronous)
             await message.channel.send(response.text)
+
+            rpd += 1
             
             print(f"[{message.author}] bertanya: {user_input}") # Log di terminal
 
