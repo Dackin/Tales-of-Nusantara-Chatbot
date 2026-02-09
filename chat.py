@@ -10,7 +10,7 @@ load_dotenv()
 rpd = 0
 max_rpd = 20
 
-gemapi = 1
+gemapi = 2
 max_gemapi = 10
 
 discord_token = os.getenv("discord_token")
@@ -20,10 +20,14 @@ client = discord.Client(intents=intents)
 
 def cek_gemapi():
     global gemapi
-    if gemapi == gemapi:
+    if gemapi == max_gemapi:
         gemapi = 1
-    GEMINI_API_KEY = os.getenv("gemini_API" + str(gemapi))
-    genai.configure(api_key=GEMINI_API_KEY)
+    GEMINI_API_KEY = os.getenv("gemini_API"+str(gemapi))
+
+    if GEMINI_API_KEY:
+        print("nemu key")
+        genai.configure(api_key=GEMINI_API_KEY)
+    else: print("error tidak nemu key")
 
 # --- 2. FUNGSI MEMBACA WIKI (LOADER) ---
 def load_wiki_file(filename):
@@ -91,8 +95,11 @@ async def on_message(message):
             gemapi += 1
             rpd = 0
         
-        cek_gemapi()
         print(f"[INFO] Berganti ke Gemini API Key #{gemapi}")
+
+    cek_gemapi()
+    print(f"[INFO] RPD saat ini: {rpd}/{max_rpd}")
+    print("[INFO] gemini_API"+str(gemapi))
 
     # Cek apakah channel ini sudah punya sesi chat history?
     if channel_id not in chat_sessions:
